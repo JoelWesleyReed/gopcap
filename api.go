@@ -237,3 +237,61 @@ func Parse(src io.Reader) (PcapFile, error) {
 
 	return *file, err
 }
+
+// Implements a packet scanner API so that the whole PCAP reader
+// contents do not have to be read and stored in memory.
+type PacketScanner struct {
+	src      io.Reader
+	flipped  bool
+	linkType Link
+	packet   *Packet
+	err      error
+}
+
+func NewPacketScanner(src io.Reader) (*PacketScanner, error) {
+	header := new(PcapFile)
+
+	// Check whether this is a libpcap file at all, and if so what byte ordering it has.
+	_, flipped, err := checkMagicNum(src)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then populate the file header.
+	err = populateFileHeader(header, src, flipped)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PacketScanner{
+		src:      src,
+		flipped:  flipped,
+		linkType: header.LinkType,
+		packet:   nil,
+		err:      nil,
+	}, nil
+}
+
+func (ps *PacketScanner) Next() bool {
+	ps.packet = new(Packet)
+	if err := parsePacket(ps.packet, ps.src, ps.flipped, ps.linkType); err != nil {
+		ps.packet = nil
+		if err != io.EOF {
+			ps.err = err
+		}
+		return false
+	}
+	return true
+}
+
+func (ps *PacketScanner) Packet() *Packet {
+	return ps.packet
+}
+
+func (ps *PacketScanner) LinkType() Link {
+	return ps.linkType
+}
+
+func (ps *PacketScanner) Error() error {
+	return ps.err
+}
