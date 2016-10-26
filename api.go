@@ -171,7 +171,7 @@ type PcapFile struct {
 // contains the timestamp on the packet, some information about packet size,
 // and the recorded bytes from the packet.
 type Packet struct {
-	Timestamp   time.Duration
+	Timestamp   time.Time
 	IncludedLen uint32
 	ActualLen   uint32
 	Data        LinkLayer
@@ -241,11 +241,12 @@ func Parse(src io.Reader) (PcapFile, error) {
 // Implements a packet scanner API so that the whole PCAP reader
 // contents do not have to be read and stored in memory.
 type PacketScanner struct {
-	src      io.Reader
-	flipped  bool
-	linkType Link
-	packet   *Packet
-	err      error
+	src          io.Reader
+	flipped      bool
+	linkType     Link
+	tzCorrection int32
+	packet       *Packet
+	err          error
 }
 
 func NewPacketScanner(src io.Reader) (*PacketScanner, error) {
@@ -264,11 +265,12 @@ func NewPacketScanner(src io.Reader) (*PacketScanner, error) {
 	}
 
 	return &PacketScanner{
-		src:      src,
-		flipped:  flipped,
-		linkType: header.LinkType,
-		packet:   nil,
-		err:      nil,
+		src:          src,
+		flipped:      flipped,
+		linkType:     header.LinkType,
+		tzCorrection: header.TZCorrection,
+		packet:       nil,
+		err:          nil,
 	}, nil
 }
 
@@ -290,6 +292,10 @@ func (ps *PacketScanner) Packet() *Packet {
 
 func (ps *PacketScanner) LinkType() Link {
 	return ps.linkType
+}
+
+func (ps *PacketScanner) TzCorrection() int32 {
+	return ps.tzCorrection
 }
 
 func (ps *PacketScanner) Error() error {
