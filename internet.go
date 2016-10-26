@@ -1,5 +1,9 @@
 package gopcap
 
+import (
+	"net"
+)
+
 //-------------------------------------------------------------------------------------------
 // UnknownINet
 //-------------------------------------------------------------------------------------------
@@ -38,8 +42,8 @@ type IPv4Packet struct {
 	TTL            uint8
 	Protocol       IPProtocol
 	Checksum       uint16
-	SourceAddress  []byte
-	DestAddress    []byte
+	SourceAddress  net.IP
+	DestAddress    net.IP
 	Options        []byte
 	data           TransportLayer
 }

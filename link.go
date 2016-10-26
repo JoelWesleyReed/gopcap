@@ -1,5 +1,9 @@
 package gopcap
 
+import (
+	"net"
+)
+
 // The minimum value of the EtherType field. If the value is less than this, it's a length.
 // The above statement isn't entirely true, but it's true enough.
 const minEtherType uint16 = 1536
@@ -30,8 +34,8 @@ func (u *UnknownLink) FromBytes(data []byte) error {
 
 // EthernetFrame represents a single ethernet frame. Valid only when the LinkType is ETHERNET.
 type EthernetFrame struct {
-	MACSource      []byte
-	MACDestination []byte
+	MACSource      net.HardwareAddr
+	MACDestination net.HardwareAddr
 	VLANTag        []byte
 	Length         uint16
 	EtherType      EtherType
